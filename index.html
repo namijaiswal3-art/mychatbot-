@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>My AI Chatbot</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fb;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 900px;
+            height: 90vh;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .chat-header {
+            background: #2563eb;
+            color: white;
+            padding: 18px 22px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .bot-icon {
+            width: 42px;
+            height: 42px;
+            background: white;
+            color: #2563eb;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .header-info h2 {
+            font-size: 18px;
+        }
+
+        .header-info p {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-top: 3px;
+        }
+
+        /* Messages area */
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 16px;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .bubble {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            line-height: 1.5;
+            font-size: 15px;
+            word-wrap: break-word;
+        }
+
+        .bot .bubble {
+            background: white;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 4px;
+        }
+
+        .user .bubble {
+            background: #2563eb;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* Input area */
+        .chat-input-area {
+            padding: 14px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        #userInput {
+            flex: 1;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            padding: 13px 15px;
+            font-size: 15px;
+            outline: none;
+            resize: none;
+            min-height: 48px;
+            max-height: 120px;
+        }
+
+        #userInput:focus {
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        #sendButton {
+            width: 48px;
+            height: 48px;
+            border: none;
+            border-radius: 12px;
+            background: #2563eb;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #sendButton:hover {
+            background: #1d4ed8;
+        }
+
+        #sendButton:disabled {
+            background: #93c5fd;
+            cursor: not-allowed;
+        }
+
+        /* Typing indicator */
+        .typing {
+            display: flex;
+            gap: 4px;
+            padding: 5px 0;
+        }
+
+        .typing span {
+            width: 7px;
+            height: 7px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: typing 1.2s infinite;
+        }
+
+        .typing span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.4;
+            }
+
+            30% {
+                transform: translateY(-5px);
+                opacity: 1;
+            }
+        }
+
+        /* Mobile */
+        @media (max-width: 600px) {
+            body {
+                background: white;
+            }
+
+            .chat-container {
+                height: 100vh;
+                border-radius: 0;
+            }
+
+            .bubble {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="chat-container">
+
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="bot-icon">🤖</div>
+
+            <div class="header-info">
+                <h2>My AI Chatbot</h2>
+                <p>Online • Ready to chat</p>
+            </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="chat-messages" id="chatMessages">
+
+            <div class="message bot">
+                <div class="bubble">
+                    👋 Hello! I'm your chatbot. How can I help you today?
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Input -->
+        <div class="chat-input-area">
+            <div class="input-wrapper">
+
+                <textarea
+                    id="userInput"
+                    placeholder="Type your message..."
+                    rows="1"
+                ></textarea>
+
+                <button id="sendButton" title="Send">
+                    ➤
+                </button>
+
+            </div>
+        </div>
+
+    </div>
+
+
+    <script>
+
+        const userInput = document.getElementById("userInput");
+        const sendButton = document.getElementById("sendButton");
+        const chatMessages = document.getElementById("chatMessages");
+
+
+        // Add message to chat
+        function addMessage(text, sender) {
+
+            const message = document.createElement("div");
+            message.className = "message " + sender;
+
+            const bubble = document.createElement("div");
+            bubble.className = "bubble";
+
+            // Prevent HTML injection
+            bubble.textContent = text;
+
+            message.appendChild(bubble);
+            chatMessages.appendChild(message);
+
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+
+        // Show typing animation
+        function showTyping() {
+
+            const message = document.createElement("div");
+            message.className = "message bot";
+            message.id = "typingMessage";
+
+            message.innerHTML = `
+                <div class="bubble">
+                    <div class="typing">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+
+            chatMessages.appendChild(message);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+
+        // Remove typing animation
+        function hideTyping() {
+
+            const typingMessage =
+                document.getElementById("typingMessage");
+
+            if (typingMessage) {
+                typingMessage.remove();
+            }
+        }
+
+
+        // Generate chatbot response
+        function getBotResponse(message) {
+
+            const text = message.toLowerCase().trim();
+
+
+            if (text.includes("hello") ||
+                text.includes("hi") ||
+                text.includes("hey")) {
+
+                return "Hello! 👋 Nice to meet you. What would you like to know?";
+            }
+
+
+            if (text.includes("how are you")) {
+
+                return "I'm doing great! 🤖 Thanks for asking.";
+            }
+
+
+            if (text.includes("your name")) {
+
+                return "I'm My AI Chatbot. You can give me any name you like!";
+            }
+
+
+            if (text.includes("github")) {
+
+                return "GitHub Pages can host this chatbot as a static website.";
+            }
+
+
+            if (text.includes("html")) {
+
+                return "HTML creates the structure of the webpage, CSS controls the design, and JavaScript makes the chatbot interactive.";
+            }
+
+
+            if (text.includes("bye")) {
+
+                return "Goodbye! 👋 Come back anytime.";
+            }
+
+
+            return "That's interesting! 🤔 I'm currently a demo chatbot, so I don't have a real AI model connected yet.";
+        }
+
+
+        // Send message
+        function sendMessage() {
+
+            const message = userInput.value.trim();
+
+            if (message === "") {
+                return;
+            }
+
+
+            // Display user message
+            addMessage(message, "user");
+
+
+            // Clear input
+            userInput.value = "";
+
+            // Reset textarea height
+            userInput.style.height = "auto";
+
+
+            // Disable button temporarily
+            sendButton.disabled = true;
+
+
+            // Show typing
+            showTyping();
+
+
+            // Simulate bot thinking
+            setTimeout(() => {
+
+                hideTyping();
+
+                const response = getBotResponse(message);
+
+                addMessage(response, "bot");
+
+                sendButton.disabled = false;
+
+                userInput.focus();
+
+            }, 700);
+        }
+
+
+        // Send when button is clicked
+        sendButton.addEventListener("click", sendMessage);
+
+
+        // Send when Enter is pressed
+        userInput.addEventListener("keydown", function(event) {
+
+            if (event.key === "Enter" && !event.shiftKey) {
+
+                event.preventDefault();
+
+                sendMessage();
+            }
+
+        });
+
+
+        // Automatically resize textarea
+        userInput.addEventListener("input", function() {
+
+            this.style.height = "auto";
+
+            this.style.height =
+                Math.min(this.scrollHeight, 120) + "px";
+
+        });
+
+    </script>
+
+</body>
+</html>
